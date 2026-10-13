@@ -1,0 +1,120 @@
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* Contenedor de la cámara + canvas (MindAR posiciona sus hijos en absoluto) */
+#ar-container {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* Capa de UI encima de la cámara */
+#ui {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+#ui > * {
+  pointer-events: auto;
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  text-align: center;
+  background: linear-gradient(160deg, #0b3d1f, #145c2e);
+}
+
+.screen h1 {
+  margin: 0;
+  font-size: 2.6rem;
+  letter-spacing: 0.02em;
+}
+
+.screen p {
+  margin: 0;
+  max-width: 28ch;
+  font-size: 1.05rem;
+  opacity: 0.9;
+}
+
+.btn {
+  min-width: 200px;
+  margin-top: 12px;
+  padding: 16px 32px;
+  border: 0;
+  border-radius: 999px;
+  background: #ffd23f;
+  color: #1b1b1b;
+  font: inherit;
+  font-size: 1.3rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+
+.btn:active {
+  transform: scale(0.94);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+}
+
+.error {
+  color: #ffb4a8;
+}
+
+.hint {
+  position: absolute;
+  left: 50%;
+  top: calc(24px + env(safe-area-inset-top));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.65);
+  font-size: 1rem;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.hint-icon {
+  animation: hint-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes hint-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+}

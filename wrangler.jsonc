@@ -1,0 +1,10 @@
+{
+  // El nombre define la URL (juego-ar.<cuenta>.workers.dev), que está impresa
+  // en el QR del marcador: no cambiarlo.
+  "name": "juego-ar",
+  "compatibility_date": "2026-10-01",
+  // Sitio estático sin build: se publica la raíz del repo (ver .assetsignore)
+  "assets": {
+    "directory": "./"
+  }
+}

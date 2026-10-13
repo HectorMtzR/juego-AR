@@ -1,0 +1,13 @@
+# Archivos del repo que no forman parte del sitio publicado
+.git
+.gitignore
+.assetsignore
+.wrangler
+.claude
+node_modules
+wrangler.jsonc
+package.json
+package-lock.json
+SPEC.md
+README.md
+docs
