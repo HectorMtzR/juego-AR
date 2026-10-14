@@ -13,16 +13,57 @@ const container = document.getElementById('ar-container');
 const field = createField();
 let started = false;
 
-// Coloca la cancha en el ancla según la postura del marcador. En el ancla de
-// MindAR el marcador ocupa el plano X/Y y +Z sale de la imagen hacia la cámara.
-function mountField(anchorGroup) {
+// Crea el grupo que sigue al marcador y coloca la cancha dentro según la
+// postura del marcador. Igual que en el ancla de MindAR, en este grupo el
+// marcador ocupa el plano X/Y y +Z sale de la imagen hacia la cámara.
+function createStage() {
+  const stage = new THREE.Group();
+  stage.visible = false;
   if (CONFIG.MARKER_UPRIGHT) {
     // El pasto queda horizontal, del marcador hacia la cámara, y el fondo de
     // la cancha (con la portería) pegado al marcador
     field.group.rotation.x = -Math.PI / 2;
     field.group.position.set(0, CONFIG.UPRIGHT_FLOOR_Y, CONFIG.FIELD_DEPTH / 2);
   }
-  anchorGroup.add(field.group);
+  stage.add(field.group);
+  return stage;
+}
+
+// Fracción a avanzar hacia la pose medida en este cuadro: poca si el error es
+// pequeño (temblor del rastreo) y casi toda si es grande (movimiento real).
+function blend(dt, error, { slow, fast, low, high }) {
+  const k = THREE.MathUtils.clamp((error - low) / (high - low), 0, 1);
+  return 1 - Math.exp(-dt / THREE.MathUtils.lerp(slow, fast, k));
+}
+
+const measured = {
+  position: new THREE.Vector3(),
+  quaternion: new THREE.Quaternion(),
+  scale: new THREE.Vector3(),
+};
+
+// MindAR recalcula la pose del marcador en cada cuadro de video y esa medida
+// tiembla, sobre todo el giro cuando el marcador se ve de frente. En vez de
+// colgar la cancha del ancla, `stage` la sigue con un suavizado.
+function followAnchor(stage, anchorGroup, dt) {
+  if (!anchorGroup.visible) {
+    stage.visible = false;
+    return;
+  }
+  anchorGroup.matrix.decompose(measured.position, measured.quaternion, measured.scale);
+  stage.scale.copy(measured.scale);
+  if (!stage.visible) {
+    // Marcador recién encontrado: se coloca directo, sin transición
+    stage.visible = true;
+    stage.position.copy(measured.position);
+    stage.quaternion.copy(measured.quaternion);
+    return;
+  }
+  const markerWidth = measured.scale.x;
+  const distance = stage.position.distanceTo(measured.position) / markerWidth;
+  stage.position.lerp(measured.position, blend(dt, distance, CONFIG.SMOOTHING.position));
+  const angle = THREE.MathUtils.radToDeg(stage.quaternion.angleTo(measured.quaternion));
+  stage.quaternion.slerp(measured.quaternion, blend(dt, angle, CONFIG.SMOOTHING.rotation));
 }
 
 async function startAR() {
@@ -38,13 +79,14 @@ async function startAR() {
   const { renderer, scene, camera } = mindar;
 
   const anchor = mindar.addAnchor(CONFIG.TARGET_INDEX);
-  mountField(anchor.group);
+  const stage = createStage();
+  scene.add(stage);
   anchor.onTargetFound = () => ui.setScanning(false);
   anchor.onTargetLost = () => ui.setScanning(true);
 
   await mindar.start();
   ui.setScanning(!anchor.visible);
-  return { renderer, scene, camera };
+  return { renderer, scene, camera, update: (dt) => followAnchor(stage, anchor.group, dt) };
 }
 
 async function startPreview() {
@@ -69,7 +111,7 @@ async function startPreview() {
   };
   window.addEventListener('resize', resize);
   resize();
-  return { renderer, scene, camera };
+  return { renderer, scene, camera, update: () => {} };
 }
 
 async function start() {
@@ -93,7 +135,9 @@ async function start() {
   const { renderer, scene, camera } = view;
   const clock = new THREE.Clock();
   renderer.setAnimationLoop(() => {
-    field.update(clock.getDelta());
+    const dt = Math.min(clock.getDelta(), 0.1);
+    view.update(dt);
+    field.update(dt);
     renderer.render(scene, camera);
   });
 }

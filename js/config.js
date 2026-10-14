@@ -22,6 +22,15 @@ export const CONFIG = {
   MARKER_UPRIGHT: true,
   UPRIGHT_FLOOR_Y: -0.5,      // altura del pasto con el marcador parado (-0.5 = borde inferior del marcador)
 
+  // Suavizado de la pose del marcador para que la cancha no tiemble. `slow` y `fast`
+  // son el retardo en segundos: se usa `slow` si la pose medida difiere menos de
+  // `low` (temblor del rastreo) y `fast` si difiere más de `high` (movimiento real).
+  // Subir `slow` da más estabilidad a cambio de que la cancha siga al marcador con más retraso.
+  SMOOTHING: {
+    rotation: { slow: 0.35, fast: 0.05, low: 2, high: 10 },      // low/high en grados
+    position: { slow: 0.12, fast: 0.03, low: 0.01, high: 0.08 }, // low/high en anchos de marcador
+  },
+
   // Cancha, en unidades del marcador (el marcador mide 1 de ancho y +Y es el fondo)
   FIELD_WIDTH: 1.5,
   FIELD_DEPTH: 1.2,
