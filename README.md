@@ -4,7 +4,7 @@ Juego de realidad aumentada para navegador móvil, activado por un marcador QR p
 
 **Jugar:** https://juego-ar.hectormarey145.workers.dev/
 
-> En desarrollo. Estado actual: Fase 1 (base): MindAR + three.js mostrando un cubo sobre el marcador. El README completo (reglas, capturas y créditos) se escribe en la Fase 7; el diseño está en [SPEC.md](SPEC.md).
+> En desarrollo. Estado actual: Fase 2 (escena): cancha, portería y zona de tiro sobre el marcador, con los modelos normalizados. El README completo (reglas, capturas y créditos) se escribe en la Fase 7; el diseño está en [SPEC.md](SPEC.md).
 
 ## Tecnologías
 
@@ -21,6 +21,8 @@ npx wrangler dev
 ```
 
 La cámara solo funciona en `localhost` o por HTTPS. Para probar desde el celular se usa la versión publicada.
+
+Para ver la cancha sin cámara ni marcador (se gira con el ratón), abre la página con `?preview`, por ejemplo `http://localhost:8787/?preview`.
 
 ## Despliegue
 

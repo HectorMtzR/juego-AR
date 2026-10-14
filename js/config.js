@@ -14,6 +14,13 @@ export const CONFIG = {
   ],
   VIBRATION: { tap: 15, goal: 60, rock: 250 }, // ms
   MODEL_SIZES: { soccer: 0.08, beach: 0.11, rock: 0.09, goal: 0.45 }, // tamaño máx. en unidades del marcador (ajustable)
+  MODEL_YAW: { soccer: 0, beach: 0, rock: 0, goal: 185 },             // giro en grados sobre el eje vertical del modelo (goal.glb viene de espaldas y 5° chueco)
+
+  // Cancha, en unidades del marcador (el marcador mide 1 de ancho y +Y es el fondo)
+  FIELD_WIDTH: 1.5,
+  FIELD_DEPTH: 1.2,
+  GOAL_Y: 0.4,                // centro de la portería
+  LANE_Y: -0.3,               // carril de objetos y centro de la zona de tiro
 
   // Marcador compilado con el compilador de MindAR (1 objetivo)
   TARGET_SRC: 'assets/targets/marker.mind',
