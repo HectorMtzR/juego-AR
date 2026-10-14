@@ -79,6 +79,8 @@ Crear un grupo hijo `field` dentro del ancla y construir todo ahí, de forma que
 - Los objetos **descansen sobre el pasto** y "arriba" sea +Z.
 - El ancho del marcador equivale a **1 unidad**; todas las medidas de abajo están en esas unidades.
 
+> **Cambio (Fase 2):** el marcador se usa **parado** (en pantalla o pared), no acostado. Con `MARKER_UPRIGHT: true` en `config.js`, `field` se gira para que el pasto quede horizontal, saliendo del borde inferior del marcador hacia la cámara, con la portería al fondo pegada al marcador y de frente al jugador (vista de penal). Las coordenadas de `field` no cambian: X a lo ancho, +Y hacia la portería, +Z arriba. Con `MARKER_UPRIGHT: false` se recupera la cancha acostada sobre el marcador.
+
 ### Elementos
 | Elemento | Descripción | Posición aproximada |
 |---|---|---|

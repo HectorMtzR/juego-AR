@@ -13,6 +13,18 @@ const container = document.getElementById('ar-container');
 const field = createField();
 let started = false;
 
+// Coloca la cancha en el ancla según la postura del marcador. En el ancla de
+// MindAR el marcador ocupa el plano X/Y y +Z sale de la imagen hacia la cámara.
+function mountField(anchorGroup) {
+  if (CONFIG.MARKER_UPRIGHT) {
+    // El pasto queda horizontal, del marcador hacia la cámara, y el fondo de
+    // la cancha (con la portería) pegado al marcador
+    field.group.rotation.x = -Math.PI / 2;
+    field.group.position.set(0, CONFIG.UPRIGHT_FLOOR_Y, CONFIG.FIELD_DEPTH / 2);
+  }
+  anchorGroup.add(field.group);
+}
+
 async function startAR() {
   const mindar = new MindARThree({
     container,
@@ -26,7 +38,7 @@ async function startAR() {
   const { renderer, scene, camera } = mindar;
 
   const anchor = mindar.addAnchor(CONFIG.TARGET_INDEX);
-  anchor.group.add(field.group);
+  mountField(anchor.group);
   anchor.onTargetFound = () => ui.setScanning(false);
   anchor.onTargetLost = () => ui.setScanning(true);
 

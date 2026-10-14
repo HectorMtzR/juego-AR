@@ -16,6 +16,12 @@ export const CONFIG = {
   MODEL_SIZES: { soccer: 0.08, beach: 0.11, rock: 0.09, goal: 0.45 }, // tamaño máx. en unidades del marcador (ajustable)
   MODEL_YAW: { soccer: 0, beach: 0, rock: 0, goal: 185 },             // giro en grados sobre el eje vertical del modelo (goal.glb viene de espaldas y 5° chueco)
 
+  // Postura del marcador. true: parado (pantalla o pared); la cancha sale del marcador
+  // hacia la cámara y la portería queda de frente. false: acostado en una mesa; la
+  // cancha queda encima del marcador.
+  MARKER_UPRIGHT: true,
+  UPRIGHT_FLOOR_Y: -0.5,      // altura del pasto con el marcador parado (-0.5 = borde inferior del marcador)
+
   // Cancha, en unidades del marcador (el marcador mide 1 de ancho y +Y es el fondo)
   FIELD_WIDTH: 1.5,
   FIELD_DEPTH: 1.2,

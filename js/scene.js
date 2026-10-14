@@ -1,6 +1,7 @@
 // Construcción de la cancha y carga de modelos.
-// Todo vive en un grupo con el marcador en el plano X/Y y +Z hacia arriba
-// (así entrega MindAR el ancla); el ancho del marcador equivale a 1 unidad.
+// Todo vive en un grupo con coordenadas de cancha: X a lo ancho, +Y hacia el
+// fondo (portería) y +Z hacia arriba; el ancho del marcador equivale a 1 unidad.
+// main.js monta ese grupo en el ancla según la postura del marcador.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { CONFIG } from './config.js';
