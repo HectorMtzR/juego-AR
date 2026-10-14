@@ -13,6 +13,7 @@ const container = document.getElementById('ar-container');
 // La cancha se crea desde el inicio para ir cargando los modelos
 const field = createField();
 let started = false;
+let tracking = false; // marcador a la vista; sin él el juego queda en pausa
 
 const game = createGame({
   onStart() {
@@ -22,14 +23,15 @@ const game = createGame({
   onSpawn: (type, x) => field.spawn(type, x),
   onMove: (x) => field.moveTo(x),
   onLeave: () => field.removeRoller(),
-  onKick(result) {
+  onKick(result, points) {
     field.kick(result);
-    ui.showKick(result);
+    ui.showKick(result, points);
   },
+  onLevelUp: (level) => ui.showLevelUp(level),
   onChange: (state) => ui.setHud(state),
-  onEnd(reason, state) {
+  onEnd(reason, state, record) {
     field.removeRoller();
-    ui.showEnd(reason, state.goals);
+    ui.showEnd(reason, state, record);
   },
 });
 
@@ -103,11 +105,8 @@ async function startAR() {
   const anchor = mindar.addAnchor(CONFIG.TARGET_INDEX);
   const stage = createStage();
   scene.add(stage);
-  anchor.onTargetFound = () => ui.setScanning(false);
-  anchor.onTargetLost = () => ui.setScanning(true);
 
   await mindar.start();
-  ui.setScanning(!anchor.visible);
   return { renderer, scene, camera, update: (dt) => followAnchor(stage, anchor.group, dt) };
 }
 
@@ -153,14 +152,20 @@ async function start() {
     return;
   }
   ui.hideStart();
+  ui.setPaused(true);
   game.start();
 
   const { renderer, scene, camera } = view;
   const clock = new THREE.Clock();
   renderer.setAnimationLoop(() => {
     const dt = Math.min(clock.getDelta(), 0.1);
-    // Sin marcador a la vista el juego queda en pausa
-    if (view.update(dt)) {
+    const visible = view.update(dt);
+    if (visible !== tracking) {
+      tracking = visible;
+      ui.setPaused(!tracking);
+    }
+    // El juego empieza al detectar el marcador y se detiene mientras no se vea
+    if (tracking) {
       game.update(dt);
       field.update(dt);
     }
@@ -168,7 +173,10 @@ async function start() {
   });
 }
 
-ui.onKick(() => game.kick());
+ui.onKick(() => {
+  if (tracking) game.kick();
+});
 ui.onRestart(() => game.start());
+ui.setBest(game.state.best);
 if (PREVIEW) start();
 else ui.onStart(start);

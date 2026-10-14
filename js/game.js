@@ -1,7 +1,27 @@
-// Lógica del juego: estados, spawns, puntaje, vidas y tiempo.
+// Lógica del juego: estados, spawns, puntaje, vidas, tiempo, niveles y racha.
 // No toca ni la escena ni el DOM: avisa de lo que pasa mediante `handlers`.
-// Los niveles y la racha llegan en la Fase 4.
 import { CONFIG } from './config.js';
+
+const BEST_KEY = 'metegol-ar-best';
+
+// localStorage puede no existir o estar bloqueado (modo privado): sin él el
+// juego sigue funcionando, solo no recuerda la mejor marca.
+function loadBest() {
+  try {
+    const value = Number(localStorage.getItem(BEST_KEY));
+    return Number.isFinite(value) && value > 0 ? value : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function saveBest(value) {
+  try {
+    localStorage.setItem(BEST_KEY, String(value));
+  } catch {
+    // sin almacenamiento: la marca solo dura esta sesión
+  }
+}
 
 function pickType(weights) {
   const total = Object.values(weights).reduce((sum, weight) => sum + weight, 0);
@@ -13,26 +33,48 @@ function pickType(weights) {
   return Object.keys(weights)[0];
 }
 
+// Número de nivel (desde 1) que corresponde a una cantidad de goles
+function levelFor(goals) {
+  let level = 1;
+  CONFIG.LEVELS.forEach(({ minGoals }, i) => {
+    if (goals >= minGoals) level = i + 1;
+  });
+  return level;
+}
+
 // handlers:
-//   onStart()             empieza una partida
-//   onSpawn(type, x)      entra un objeto al carril
-//   onMove(x)             el objeto avanzó
-//   onLeave()             el objeto salió del carril sin ser pateado
-//   onKick(result)        'goal' | 'beach' | 'rock' | 'air'
-//   onChange(state)       cambió algo del HUD (también el tiempo)
-//   onEnd(reason, state)  'time' | 'lives'
+//   onStart()                     empieza una partida
+//   onSpawn(type, x)              entra un objeto al carril
+//   onMove(x)                     el objeto avanzó
+//   onLeave()                     el objeto salió del carril sin ser pateado
+//   onKick(result, points)        'goal' | 'beach' | 'rock' | 'air' y los goles que sumó
+//   onLevelUp(level)              se alcanzó un nivel nuevo
+//   onChange(state)               cambió algo del HUD (también el tiempo)
+//   onEnd(reason, state, record)  'time' | 'lives'; `record` si hay nueva mejor marca
 export function createGame(handlers) {
-  const state = { playing: false, goals: 0, lives: 0, timeLeft: 0 };
+  const state = {
+    playing: false,
+    goals: 0,
+    lives: 0,
+    timeLeft: 0,
+    level: 1,
+    streak: 0,     // goles seguidos
+    bonus: false,  // racha activa: el siguiente gol vale BONUS_MULTIPLIER
+    best: loadBest(),
+  };
   let object = null; // objeto que cruza el carril: { type, x, dir }
   let spawnTimer = 0;
 
-  const level = () => CONFIG.LEVELS[0];
+  const level = () => CONFIG.LEVELS[state.level - 1];
 
   function start() {
     state.playing = true;
     state.goals = 0;
     state.lives = CONFIG.START_LIVES;
     state.timeLeft = CONFIG.GAME_DURATION;
+    state.level = 1;
+    state.streak = 0;
+    state.bonus = false;
     object = null;
     spawnTimer = level().spawnInterval;
     handlers.onStart();
@@ -42,7 +84,12 @@ export function createGame(handlers) {
   function end(reason) {
     state.playing = false;
     object = null;
-    handlers.onEnd(reason, state);
+    const record = state.goals > state.best;
+    if (record) {
+      state.best = state.goals;
+      saveBest(state.best);
+    }
+    handlers.onEnd(reason, state, record);
   }
 
   function spawn() {
@@ -62,6 +109,7 @@ export function createGame(handlers) {
     if (object) {
       object.x += object.dir * level().speed * dt;
       if (object.x < CONFIG.LANE_START_X || object.x > CONFIG.LANE_END_X) {
+        // Dejar pasar un objeto no tiene efecto, ni siquiera sobre la racha
         object = null;
         spawnTimer = level().spawnInterval;
         handlers.onLeave();
@@ -90,10 +138,25 @@ export function createGame(handlers) {
       spawnTimer = level().spawnInterval;
     }
 
-    if (result === 'goal') state.goals += 1;
-    if (result === 'rock') state.lives -= 1;
+    let points = 0;
+    if (result === 'goal') {
+      points = state.bonus ? CONFIG.BONUS_MULTIPLIER : 1;
+      state.goals += points;
+      state.streak += 1;
+    } else {
+      // Pelota de playa, roca o patada al aire rompen la racha
+      state.streak = 0;
+      if (result === 'rock') state.lives -= 1;
+    }
+    state.bonus = state.streak >= CONFIG.STREAK_FOR_BONUS;
+    handlers.onKick(result, points);
 
-    handlers.onKick(result);
+    const reached = levelFor(state.goals);
+    if (reached > state.level) {
+      state.level = reached;
+      handlers.onLevelUp(reached);
+    }
+
     handlers.onChange(state);
     if (state.lives <= 0) end('lives');
   }

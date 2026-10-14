@@ -52,6 +52,7 @@ body {
   padding-bottom: calc(24px + env(safe-area-inset-bottom));
   text-align: center;
   background: linear-gradient(160deg, #0b3d1f, #145c2e);
+  overflow-y: auto;
 }
 
 .screen h1 {
@@ -94,6 +95,39 @@ body {
   color: #ffb4a8;
 }
 
+.screen .small {
+  font-size: 0.92rem;
+  opacity: 0.8;
+}
+
+.screen .big {
+  font-size: 1.6rem;
+  font-weight: 700;
+  opacity: 1;
+}
+
+.rules {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 4px 0;
+  padding: 14px 18px;
+  list-style: none;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.25);
+  text-align: left;
+}
+
+.rules li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rule-icon {
+  font-size: 1.6rem;
+}
+
 .screen-overlay {
   background: rgba(6, 30, 15, 0.82);
 }
@@ -124,6 +158,27 @@ body {
   white-space: nowrap;
 }
 
+.hud-sub {
+  position: absolute;
+  top: calc(60px + env(safe-area-inset-top));
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.hud-sub .hud-item {
+  padding: 5px 12px;
+  font-size: 0.95rem;
+}
+
+.hud-bonus {
+  background: #ff9f1c;
+  color: #1b1b1b;
+  font-weight: 800;
+}
+
 #hud-lives .lost {
   opacity: 0.25;
   filter: grayscale(1);
@@ -145,6 +200,13 @@ body {
 .message[data-result="goal"] { color: #ffd23f; }
 .message[data-result="rock"] { color: #ff6b5e; }
 .message[data-result="air"] { font-size: 1.8rem; opacity: 0.9; }
+
+.level-up {
+  top: 33%;
+  font-size: 2rem;
+  color: #7df0ff;
+  animation-duration: 1.4s;
+}
 
 @keyframes message-pop {
   0% { transform: scale(0.6); opacity: 0; }
@@ -176,6 +238,10 @@ body {
   transition: transform 0.08s ease, background-color 0.08s ease, box-shadow 0.08s ease;
 }
 
+.paused .btn-kick {
+  opacity: 0.45;
+}
+
 .btn-kick.pressed {
   transform: scale(0.9);
   background: #ff9f1c;
@@ -196,6 +262,10 @@ body {
   font-size: 1rem;
   white-space: nowrap;
   pointer-events: none;
+}
+
+#screen-end:not([hidden]) ~ .hint {
+  display: none;
 }
 
 .hint-icon {

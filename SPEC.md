@@ -297,3 +297,9 @@ Trabajar fase por fase. Al terminar cada una, debe quedar algo funcionando y hac
 - [ ] Grabar el video demo de 30–60 s con buena luz.
 - [ ] Escribir y publicar el artículo de LinkedIn.
 - [ ] Subir los 3 enlaces al formulario.
+
+---
+
+## 16. Ideas a futuro
+
+- **Salida más caótica de los objetos:** que al principio sigan saliendo uno por uno y que, conforme avanza la partida, salgan varios a la vez. Hoy `game.js` maneja un solo objeto en el carril; habría que pasar a una lista de objetos y decidir a cuál afecta PATEAR cuando hay más de uno en la zona de tiro.

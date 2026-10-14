@@ -27,8 +27,15 @@
   <div id="ui">
     <section id="screen-start" class="screen">
       <h1>MeteGol AR</h1>
-      <p>Escanea el marcador para ver la cancha.</p>
+      <p>Patea solo las pelotas de fut cuando pasen por la zona de tiro.</p>
+      <ul class="rules">
+        <li><span class="rule-icon" aria-hidden="true">⚽</span><span><b>Pelota de fut:</b> ¡gol!</span></li>
+        <li><span class="rule-icon" aria-hidden="true">🏖️</span><span><b>Pelota de playa:</b> se vuela y no cuenta</span></li>
+        <li><span class="rule-icon" aria-hidden="true">🪨</span><span><b>Roca:</b> pierdes una vida</span></li>
+      </ul>
+      <p id="start-info" class="small"></p>
       <button id="btn-start" class="btn" type="button">Jugar</button>
+      <p id="start-best" class="small" hidden></p>
       <p id="start-error" class="error" hidden></p>
     </section>
 
@@ -38,20 +45,28 @@
         <span id="hud-lives" class="hud-item" aria-label="Vidas"></span>
         <span class="hud-item">⏱ <b id="hud-time">60</b></span>
       </div>
+      <div class="hud-sub">
+        <span id="hud-level" class="hud-item">Nivel 1</span>
+        <span id="hud-bonus" class="hud-item hud-bonus" hidden></span>
+      </div>
       <div id="message" class="message" hidden></div>
+      <div id="level-up" class="message level-up" hidden></div>
       <button id="btn-kick" class="btn-kick" type="button">PATEAR</button>
     </div>
 
+    <section id="screen-end" class="screen screen-overlay" hidden>
+      <h1>¡Se acabó!</h1>
+      <p id="end-reason"></p>
+      <p id="end-summary" class="big"></p>
+      <p id="end-best"></p>
+      <button id="btn-restart" class="btn" type="button">Jugar otra vez</button>
+    </section>
+
+    <!-- Va después de la pantalla de fin para poder ocultarlo desde el CSS cuando esa pantalla está abierta -->
     <div id="scanning" class="hint" hidden>
       <span class="hint-icon" aria-hidden="true">📷</span>
       Apunta tu cámara al marcador
     </div>
-
-    <section id="screen-end" class="screen screen-overlay" hidden>
-      <h1 id="end-title"></h1>
-      <p id="end-summary"></p>
-      <button id="btn-restart" class="btn" type="button">Jugar otra vez</button>
-    </section>
   </div>
 
   <script type="module" src="js/main.js"></script>
