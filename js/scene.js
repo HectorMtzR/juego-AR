@@ -197,23 +197,126 @@ export function createField() {
   ).then(() => {
     models.goal.position.set(0, CONFIG.GOAL_Y, 0);
     group.add(models.goal);
-
-    // Fase 2: los tres objetos quietos sobre el carril para revisar su escala.
-    // En la Fase 3 los sustituyen los spawns.
-    const demoX = { beach: -0.4, soccer: 0, rock: 0.4 };
-    for (const [type, x] of Object.entries(demoX)) {
-      const object = models[type].clone();
-      object.position.set(x, CONFIG.LANE_Y, object.userData.height / 2);
-      group.add(object);
-    }
   });
+
+  // ---------- Objetos ----------
+
+  let roller = null;  // objeto que cruza el carril: { object, radius }
+  const flying = [];  // objetos ya pateados, con su animación de salida
+
+  function spawn(type, x) {
+    const object = models[type].clone();
+    const radius = object.userData.height / 2;
+    object.position.set(x, CONFIG.LANE_Y, radius);
+    group.add(object);
+    roller = { object, radius };
+  }
+
+  function moveTo(x) {
+    const { object, radius } = roller;
+    object.rotation.y += (x - object.position.x) / radius; // rueda sin patinar
+    object.position.x = x;
+  }
+
+  function removeRoller() {
+    if (!roller) return;
+    group.remove(roller.object);
+    roller = null;
+  }
+
+  // Saca de juego al objeto del carril con la animación de su resultado
+  function kick(result) {
+    if (!roller || !KICK_ANIMATIONS[result]) return;
+    const { object } = roller;
+    roller = null;
+    flying.push({
+      object,
+      from: object.position.clone(),
+      time: 0,
+      spinSide: Math.random() < 0.5 ? -1 : 1,
+      ...KICK_ANIMATIONS[result],
+    });
+  }
+
+  function reset() {
+    removeRoller();
+    for (const { object } of flying) group.remove(object);
+    flying.length = 0;
+  }
 
   let time = 0;
   // dt en segundos
   function update(dt) {
     time += dt;
     zoneRing.material.opacity = 0.75 + 0.25 * Math.sin(time * 4);
+
+    for (let i = flying.length - 1; i >= 0; i--) {
+      const item = flying[i];
+      item.time += dt;
+      if (item.time >= item.duration) {
+        group.remove(item.object);
+        flying.splice(i, 1);
+      } else {
+        item.step(item, dt);
+      }
+    }
   }
 
-  return { group, models, ready, update };
+  return { group, models, ready, update, spawn, moveTo, removeRoller, kick, reset };
 }
+
+// ---------- Animaciones de salida ----------
+// Trayectorias calculadas, sin física. `step` recibe el objeto pateado con su
+// posición inicial (`from`) y el tiempo transcurrido (`time`).
+
+// Encoge el objeto durante los últimos `fade` segundos para que no desaparezca de golpe
+function shrinkAtEnd({ object, time, duration }, fade) {
+  object.scale.setScalar(THREE.MathUtils.clamp((duration - time) / fade, 0, 1));
+}
+
+const KICK_ANIMATIONS = {
+  // Arco hacia la red; la pelota se queda un momento dentro de la portería
+  goal: {
+    duration: 1.2,
+    step(item, dt) {
+      const { object, from } = item;
+      const flight = 0.45;
+      const k = Math.min(item.time / flight, 1);
+      object.position.set(
+        from.x,
+        THREE.MathUtils.lerp(from.y, CONFIG.GOAL_Y, k),
+        from.z + 0.16 * 4 * k * (1 - k),
+      );
+      if (k < 1) object.rotation.x -= dt * 25;
+      shrinkAtEnd(item, 0.15);
+    },
+  },
+
+  // Sale volando hacia arriba, girando, por encima de la portería
+  beach: {
+    duration: 1.1,
+    step(item, dt) {
+      const { object, from } = item;
+      const k = item.time / item.duration;
+      object.position.set(
+        from.x + item.spinSide * 0.25 * k,
+        THREE.MathUtils.lerp(from.y, CONFIG.GOAL_Y + 0.5, k),
+        from.z + 1.1 * Math.sin((k * Math.PI) / 2),
+      );
+      object.rotation.x -= dt * 14;
+      object.rotation.z += dt * item.spinSide * 9;
+      shrinkAtEnd(item, 0.3);
+    },
+  },
+
+  // La roca apenas se mueve: tiembla en su lugar
+  rock: {
+    duration: 0.7,
+    step(item) {
+      const { object, from } = item;
+      const k = item.time / item.duration;
+      object.position.x = from.x + Math.sin(item.time * 70) * 0.012 * (1 - k);
+      shrinkAtEnd(item, 0.2);
+    },
+  },
+};

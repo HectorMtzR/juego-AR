@@ -94,10 +94,98 @@ body {
   color: #ffb4a8;
 }
 
+.screen-overlay {
+  background: rgba(6, 30, 15, 0.82);
+}
+
+/* HUD */
+#hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hud-top {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top));
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hud-item {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.6);
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+#hud-lives .lost {
+  opacity: 0.25;
+  filter: grayscale(1);
+}
+
+.message {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 22%;
+  text-align: center;
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.55), 0 0 14px rgba(0, 0, 0, 0.6);
+  animation: message-pop 0.9s ease-out forwards;
+}
+
+.message[data-result="goal"] { color: #ffd23f; }
+.message[data-result="rock"] { color: #ff6b5e; }
+.message[data-result="air"] { font-size: 1.8rem; opacity: 0.9; }
+
+@keyframes message-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  15% { transform: scale(1.12); opacity: 1; }
+  30% { transform: scale(1); }
+  75% { opacity: 1; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+.btn-kick {
+  position: absolute;
+  left: 50%;
+  bottom: calc(28px + env(safe-area-inset-bottom));
+  width: 132px;
+  height: 132px;
+  margin-left: -66px;
+  border: 5px solid #fff;
+  border-radius: 50%;
+  background: #e63946;
+  color: #fff;
+  font: inherit;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: none;
+  transition: transform 0.08s ease, background-color 0.08s ease, box-shadow 0.08s ease;
+}
+
+.btn-kick.pressed {
+  transform: scale(0.9);
+  background: #ff9f1c;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+
 .hint {
   position: absolute;
   left: 50%;
-  top: calc(24px + env(safe-area-inset-top));
+  top: 45%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;

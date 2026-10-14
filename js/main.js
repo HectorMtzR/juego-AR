@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { MindARThree } from 'mindar-image-three';
 import { CONFIG } from './config.js';
 import { createField } from './scene.js';
+import { createGame } from './game.js';
 import * as ui from './ui.js';
 
 // Con ?preview la cancha se ve sin cámara ni marcador, para ajustarla en la computadora
@@ -12,6 +13,25 @@ const container = document.getElementById('ar-container');
 // La cancha se crea desde el inicio para ir cargando los modelos
 const field = createField();
 let started = false;
+
+const game = createGame({
+  onStart() {
+    field.reset();
+    ui.showGame();
+  },
+  onSpawn: (type, x) => field.spawn(type, x),
+  onMove: (x) => field.moveTo(x),
+  onLeave: () => field.removeRoller(),
+  onKick(result) {
+    field.kick(result);
+    ui.showKick(result);
+  },
+  onChange: (state) => ui.setHud(state),
+  onEnd(reason, state) {
+    field.removeRoller();
+    ui.showEnd(reason, state.goals);
+  },
+});
 
 // Crea el grupo que sigue al marcador y coloca la cancha dentro según la
 // postura del marcador. Igual que en el ancla de MindAR, en este grupo el
@@ -45,10 +65,11 @@ const measured = {
 // MindAR recalcula la pose del marcador en cada cuadro de video y esa medida
 // tiembla, sobre todo el giro cuando el marcador se ve de frente. En vez de
 // colgar la cancha del ancla, `stage` la sigue con un suavizado.
+// Devuelve si el marcador está a la vista.
 function followAnchor(stage, anchorGroup, dt) {
   if (!anchorGroup.visible) {
     stage.visible = false;
-    return;
+    return false;
   }
   anchorGroup.matrix.decompose(measured.position, measured.quaternion, measured.scale);
   stage.scale.copy(measured.scale);
@@ -57,13 +78,14 @@ function followAnchor(stage, anchorGroup, dt) {
     stage.visible = true;
     stage.position.copy(measured.position);
     stage.quaternion.copy(measured.quaternion);
-    return;
+    return true;
   }
   const markerWidth = measured.scale.x;
   const distance = stage.position.distanceTo(measured.position) / markerWidth;
   stage.position.lerp(measured.position, blend(dt, distance, CONFIG.SMOOTHING.position));
   const angle = THREE.MathUtils.radToDeg(stage.quaternion.angleTo(measured.quaternion));
   stage.quaternion.slerp(measured.quaternion, blend(dt, angle, CONFIG.SMOOTHING.rotation));
+  return true;
 }
 
 async function startAR() {
@@ -111,7 +133,7 @@ async function startPreview() {
   };
   window.addEventListener('resize', resize);
   resize();
-  return { renderer, scene, camera, update: () => {} };
+  return { renderer, scene, camera, update: () => true };
 }
 
 async function start() {
@@ -121,7 +143,7 @@ async function start() {
 
   let view;
   try {
-    view = await (PREVIEW ? startPreview() : startAR());
+    [view] = await Promise.all([PREVIEW ? startPreview() : startAR(), field.ready]);
   } catch (err) {
     // MindAR rechaza sin detalle si no hay cámara o el usuario niega el permiso
     console.error('No se pudo iniciar', err);
@@ -131,16 +153,22 @@ async function start() {
     return;
   }
   ui.hideStart();
+  game.start();
 
   const { renderer, scene, camera } = view;
   const clock = new THREE.Clock();
   renderer.setAnimationLoop(() => {
     const dt = Math.min(clock.getDelta(), 0.1);
-    view.update(dt);
-    field.update(dt);
+    // Sin marcador a la vista el juego queda en pausa
+    if (view.update(dt)) {
+      game.update(dt);
+      field.update(dt);
+    }
     renderer.render(scene, camera);
   });
 }
 
+ui.onKick(() => game.kick());
+ui.onRestart(() => game.start());
 if (PREVIEW) start();
 else ui.onStart(start);
