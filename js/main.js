@@ -5,9 +5,18 @@ import { CONFIG } from './config.js';
 import { createField } from './scene.js';
 import { createGame } from './game.js';
 import * as ui from './ui.js';
+import * as feedback from './feedback.js';
 
 // Con ?preview la cancha se ve sin cámara ni marcador, para ajustarla en la computadora
 const PREVIEW = new URLSearchParams(location.search).has('preview');
+
+// Sonido y vibración de cada resultado de PATEAR (tabla 7 de SPEC.md)
+const KICK_FEEDBACK = {
+  goal: { sounds: ['kick', 'goal'], vibration: 'goal' },
+  beach: { sounds: ['kick', 'boing'] },
+  rock: { sounds: ['kick', 'hit'], vibration: 'rock' },
+  air: { sounds: ['whoosh'] },
+};
 
 const container = document.getElementById('ar-container');
 // La cancha se crea desde el inicio para ir cargando los modelos
@@ -26,16 +35,24 @@ const game = createGame({
   onKick(result, points, id) {
     field.kick(id, result);
     ui.showKick(result, points);
+    const { sounds, vibration } = KICK_FEEDBACK[result];
+    sounds.forEach(feedback.play);
+    if (vibration) feedback.vibrate(vibration);
   },
-  onLevelUp: (level) => ui.showLevelUp(level),
+  onLevelUp(level) {
+    ui.showLevelUp(level);
+    feedback.play('levelup');
+  },
   onStage(stage) {
     field.setZoneRadius(stage.zoneRadius);
     ui.showStage(stage);
+    if (stage.message) feedback.play('levelup');
   },
   onChange: (state) => ui.setHud(state),
   onEnd(reason, state, record) {
     field.removeRollers();
     ui.showEnd(reason, state, record);
+    feedback.play('gameover');
   },
 });
 
@@ -178,6 +195,9 @@ async function start() {
 }
 
 ui.onKick(() => {
+  // El botón siempre responde, aunque el juego esté en pausa
+  feedback.play('click');
+  feedback.vibrate('tap');
   if (tracking) game.kick();
 });
 ui.onRestart(() => game.start());

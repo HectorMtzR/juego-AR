@@ -4,7 +4,7 @@ Juego de realidad aumentada para navegador móvil, activado por un marcador QR p
 
 **Jugar:** https://juego-ar.hectormarey145.workers.dev/
 
-> En desarrollo. Estado actual: Fase 4 (flujo): pantallas de inicio y fin, pausa al perder el marcador, niveles, racha x2 y mejor marca. El README completo (reglas, capturas y créditos) se escribe en la Fase 7; el diseño está en [SPEC.md](SPEC.md).
+> En desarrollo. Estado actual: Fase 5 (feedback): sonidos, vibración y animaciones para cada acción, sobre el flujo completo (inicio, fin, pausa, niveles, etapas de dificultad, racha x2 y mejor marca). El README completo (reglas, capturas y créditos) se escribe en la Fase 7; el diseño está en [SPEC.md](SPEC.md).
 
 ## Tecnologías
 

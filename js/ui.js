@@ -16,6 +16,7 @@ const els = {
   level: document.getElementById('hud-level'),
   bonus: document.getElementById('hud-bonus'),
   message: document.getElementById('message'),
+  flash: document.getElementById('flash'),
   levelUp: document.getElementById('level-up'),
   kickBtn: document.getElementById('btn-kick'),
   end: document.getElementById('screen-end'),
@@ -108,6 +109,7 @@ export function showGame() {
   els.end.hidden = true;
   els.message.hidden = true;
   els.levelUp.hidden = true;
+  els.flash.hidden = true;
   els.hud.hidden = false;
 }
 
@@ -123,12 +125,18 @@ export function setHud({ goals, lives, timeLeft, level, bonus, stage }) {
   els.timeItem.classList.toggle('hud-final', CONFIG.STAGES[stage].alert);
   setText(els.level, `Nivel ${level}`);
   els.bonus.hidden = !bonus;
-  [...els.lives.children].forEach((heart, i) => heart.classList.toggle('lost', i >= lives));
+  // Al perderse, el corazón se rompe (💔) con una animación de CSS
+  [...els.lives.children].forEach((heart, i) => {
+    const lost = i >= lives;
+    heart.classList.toggle('lost', lost);
+    setText(heart, lost ? '💔' : '❤️');
+  });
 }
 
 export function showKick(result, points) {
   els.message.dataset.result = result;
   pop(els.message, points > 1 ? `${KICK_MESSAGES[result]} x${points}` : KICK_MESSAGES[result]);
+  if (result === 'rock') pop(els.flash, '');
 }
 
 export function showLevelUp(level) {

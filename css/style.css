@@ -190,9 +190,39 @@ body {
   50% { transform: scale(1.08); }
 }
 
+#hud-lives span {
+  display: inline-block;
+}
+
 #hud-lives .lost {
-  opacity: 0.25;
+  opacity: 0.35;
   filter: grayscale(1);
+  animation: heart-break 0.7s ease-out;
+}
+
+/* Se infla, tiembla y se apaga; termina en el estado de .lost */
+@keyframes heart-break {
+  0% { transform: scale(1); opacity: 1; filter: none; }
+  20% { transform: scale(1.6) rotate(-12deg); opacity: 1; filter: none; }
+  35% { transform: scale(1.5) rotate(12deg); }
+  50% { transform: scale(1.5) rotate(-8deg); opacity: 1; filter: none; }
+  100% { transform: scale(1) rotate(0); opacity: 0.35; filter: grayscale(1); }
+}
+
+/* Destello rojo en los bordes de la pantalla. Con el id para ganarle a
+   `#ui > *`: no debe tapar el botón PATEAR. */
+#flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(230, 57, 70, 0) 35%, rgba(230, 57, 70, 0.75) 100%);
+  animation: flash 0.45s ease-out forwards;
+}
+
+@keyframes flash {
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 .message {

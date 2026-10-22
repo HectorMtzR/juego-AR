@@ -31,6 +31,7 @@ export const CONFIG = {
     { minGoals: 10, speed: 0.7,  spawnInterval: 0.6, weights: { soccer: 45, beach: 25, rock: 30 } },
   ],
   VIBRATION: { tap: 15, goal: 60, rock: 250 }, // ms
+  SOUND_VOLUME: 0.8,          // volumen general, de 0 a 1
   MODEL_SIZES: { soccer: 0.08, beach: 0.11, rock: 0.09, goal: 0.45 }, // tamaño máx. en unidades del marcador (ajustable)
   MODEL_YAW: { soccer: 0, beach: 0, rock: 0, goal: 185 },             // giro en grados sobre el eje vertical del modelo (goal.glb viene de espaldas y 5° chueco)
 

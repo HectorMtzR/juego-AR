@@ -232,8 +232,24 @@ export function createField() {
     rollers.clear();
   }
 
+  // Patada al aire: dos anillos blancos salen de la zona de tiro y se desvanecen
+  const puffs = [];
+  function puff() {
+    for (const delay of [0, 0.08]) {
+      const ring = createDecal(new THREE.RingGeometry(0.8, 1, 40), 0xffffff, 0, 0.005);
+      ring.position.y = CONFIG.LANE_Y;
+      ring.scale.setScalar(radius * zone.scale.x);
+      group.add(ring);
+      puffs.push({ ring, from: ring.scale.x, time: -delay });
+    }
+  }
+
   // Saca de juego al objeto pateado con la animación de su resultado
   function kick(id, result) {
+    if (result === 'air') {
+      puff();
+      return;
+    }
     const roller = rollers.get(id);
     if (!roller || !KICK_ANIMATIONS[result]) return;
     const { object } = roller;
@@ -256,6 +272,8 @@ export function createField() {
     removeRollers();
     for (const { object } of flying) group.remove(object);
     flying.length = 0;
+    for (const { ring } of puffs) group.remove(ring);
+    puffs.length = 0;
     zoneScale = 1;
     zone.scale.setScalar(1);
   }
@@ -266,6 +284,21 @@ export function createField() {
     time += dt;
     zoneRing.material.opacity = 0.75 + 0.25 * Math.sin(time * 4);
     zone.scale.setScalar(THREE.MathUtils.damp(zone.scale.x, zoneScale, 12, dt));
+
+    for (let i = puffs.length - 1; i >= 0; i--) {
+      const item = puffs[i];
+      item.time += dt;
+      const k = THREE.MathUtils.clamp(item.time / PUFF_DURATION, 0, 1);
+      if (k >= 1) {
+        group.remove(item.ring);
+        item.ring.geometry.dispose();
+        item.ring.material.dispose();
+        puffs.splice(i, 1);
+      } else {
+        item.ring.scale.setScalar(item.from * (1 + 1.2 * k));
+        item.ring.material.opacity = item.time < 0 ? 0 : 0.8 * (1 - k);
+      }
+    }
 
     for (let i = flying.length - 1; i >= 0; i--) {
       const item = flying[i];
@@ -283,6 +316,8 @@ export function createField() {
     group, models, ready, update, spawn, moveTo, removeRoller, removeRollers, kick, setZoneRadius, reset,
   };
 }
+
+const PUFF_DURATION = 0.4; // s
 
 // ---------- Animaciones de salida ----------
 // Trayectorias calculadas, sin física. `step` recibe el objeto pateado con su
