@@ -179,6 +179,17 @@ body {
   font-weight: 800;
 }
 
+/* Recta final: el reloj se pone rojo y late */
+.hud-final {
+  background: #e63946;
+  animation: hud-final-pulse 1s ease-in-out infinite;
+}
+
+@keyframes hud-final-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
 #hud-lives .lost {
   opacity: 0.25;
   filter: grayscale(1);

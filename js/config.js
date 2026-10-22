@@ -4,7 +4,15 @@ export const CONFIG = {
   START_LIVES: 3,
   STREAK_FOR_BONUS: 3,
   BONUS_MULTIPLIER: 2,
-  KICK_ZONE_RADIUS: 0.12,     // unidades del marcador
+  // Radio de la zona de tiro (unidades del marcador). Empieza con el primero y
+  // pasa al siguiente cada ZONE_SHRINK_EVERY segundos de partida.
+  KICK_ZONE_RADII: [0.12, 0.1, 0.085],
+  ZONE_SHRINK_EVERY: 20,      // segundos
+  // Recta final: en los últimos `time` segundos los objetos van más rápido y
+  // pueden ir hasta `maxObjects` en el carril, uno detrás de otro y separados
+  // entre `gap[0]` y `gap[1]` unidades (más que el diámetro de la zona, para
+  // que nunca haya dos dentro a la vez). `spawnInterval` aplica con el carril vacío.
+  FINAL_RUSH: { time: 15, maxObjects: 2, speedBoost: 1.2, spawnInterval: 0.4, gap: [0.28, 0.5] },
   LANE_START_X: -0.7,
   LANE_END_X: 0.7,
   LEVELS: [

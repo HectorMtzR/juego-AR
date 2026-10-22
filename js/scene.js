@@ -179,8 +179,9 @@ export function createField() {
   lane.position.y = CONFIG.LANE_Y;
   group.add(lane);
 
-  // Zona de tiro
-  const radius = CONFIG.KICK_ZONE_RADIUS;
+  // Zona de tiro. Se dibuja con el radio inicial y se escala al achicarse.
+  const radius = CONFIG.KICK_ZONE_RADII[0];
+  let zoneScale = 1; // escala a la que tiende la zona (radio actual / inicial)
   const zone = new THREE.Group();
   zone.position.set(0, CONFIG.LANE_Y, 0);
   const zoneFill = createDecal(new THREE.CircleGeometry(radius, 48), 0xffe14d, 0.25, 0.003);
@@ -201,34 +202,41 @@ export function createField() {
 
   // ---------- Objetos ----------
 
-  let roller = null;  // objeto que cruza el carril: { object, radius }
-  const flying = [];  // objetos ya pateados, con su animación de salida
+  const rollers = new Map(); // objetos que cruzan el carril, por id: { object, radius }
+  const flying = [];         // objetos ya pateados, con su animación de salida
 
-  function spawn(type, x) {
+  function spawn(id, type, x) {
     const object = models[type].clone();
     const radius = object.userData.height / 2;
     object.position.set(x, CONFIG.LANE_Y, radius);
     group.add(object);
-    roller = { object, radius };
+    rollers.set(id, { object, radius });
   }
 
-  function moveTo(x) {
-    const { object, radius } = roller;
+  function moveTo(id, x) {
+    const { object, radius } = rollers.get(id);
     object.rotation.y += (x - object.position.x) / radius; // rueda sin patinar
     object.position.x = x;
   }
 
-  function removeRoller() {
+  function removeRoller(id) {
+    const roller = rollers.get(id);
     if (!roller) return;
     group.remove(roller.object);
-    roller = null;
+    rollers.delete(id);
   }
 
-  // Saca de juego al objeto del carril con la animación de su resultado
-  function kick(result) {
+  function removeRollers() {
+    for (const { object } of rollers.values()) group.remove(object);
+    rollers.clear();
+  }
+
+  // Saca de juego al objeto pateado con la animación de su resultado
+  function kick(id, result) {
+    const roller = rollers.get(id);
     if (!roller || !KICK_ANIMATIONS[result]) return;
     const { object } = roller;
-    roller = null;
+    rollers.delete(id);
     flying.push({
       object,
       from: object.position.clone(),
@@ -238,10 +246,17 @@ export function createField() {
     });
   }
 
+  // La zona llega a su nuevo tamaño en `update`, con una animación corta
+  function setZoneRadius(value) {
+    zoneScale = value / radius;
+  }
+
   function reset() {
-    removeRoller();
+    removeRollers();
     for (const { object } of flying) group.remove(object);
     flying.length = 0;
+    zoneScale = 1;
+    zone.scale.setScalar(1);
   }
 
   let time = 0;
@@ -249,6 +264,7 @@ export function createField() {
   function update(dt) {
     time += dt;
     zoneRing.material.opacity = 0.75 + 0.25 * Math.sin(time * 4);
+    zone.scale.setScalar(THREE.MathUtils.damp(zone.scale.x, zoneScale, 12, dt));
 
     for (let i = flying.length - 1; i >= 0; i--) {
       const item = flying[i];
@@ -262,7 +278,9 @@ export function createField() {
     }
   }
 
-  return { group, models, ready, update, spawn, moveTo, removeRoller, kick, reset };
+  return {
+    group, models, ready, update, spawn, moveTo, removeRoller, removeRollers, kick, setZoneRadius, reset,
+  };
 }
 
 // ---------- Animaciones de salida ----------

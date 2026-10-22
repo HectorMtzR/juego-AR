@@ -101,8 +101,11 @@ Iluminación simple: una luz ambiental + una direccional.
 - Entre un objeto y otro hay un intervalo de espera (`SPAWN_INTERVAL`, depende del nivel).
 - El tipo de objeto se elige al azar según las probabilidades del nivel.
 
+> **Cambio (ajuste de dificultad):** en la **recta final** (últimos 15 s) los objetos van 1.2× más rápido, el carril vacío se rellena en 0.4 s y puede haber **hasta 2 objetos** a la vez: el segundo entra detrás del primero, en la misma dirección, separado entre 0.28 y 0.5 unidades. Esa separación es mayor que el diámetro de la zona de tiro, así que nunca hay dos objetos dentro de la zona a la vez y PATEAR siempre afecta a uno solo. Al empezar la recta final aparece "¡ÚLTIMOS 15!" y el reloj del HUD se pone rojo. Valores en `FINAL_RUSH`.
+
 ### El botón PATEAR
-- Al tocarlo, se revisa si hay un objeto **dentro de la zona de tiro** (distancia en X al centro ≤ `KICK_ZONE_RADIUS`).
+- Al tocarlo, se revisa si hay un objeto **dentro de la zona de tiro** (distancia en X al centro ≤ radio actual de la zona).
+- **La zona se achica cada 20 s:** radio 0.12 → 0.10 → 0.085 (`KICK_ZONE_RADII`, `ZONE_SHRINK_EVERY`), con una animación corta y el aviso "¡Zona más chica!".
 - Si hay objeto en la zona, se resuelve según la tabla de reglas.
 - Si no hay nada en la zona, es una **patada al aire**.
 - Un objeto solo puede ser pateado una vez. Después de patearlo, sale de juego con su animación.
@@ -150,7 +153,9 @@ export const CONFIG = {
   START_LIVES: 3,
   STREAK_FOR_BONUS: 3,
   BONUS_MULTIPLIER: 2,
-  KICK_ZONE_RADIUS: 0.12,     // unidades del marcador
+  KICK_ZONE_RADII: [0.12, 0.1, 0.085], // unidades del marcador; uno por etapa
+  ZONE_SHRINK_EVERY: 20,      // segundos
+  FINAL_RUSH: { time: 15, maxObjects: 2, speedBoost: 1.2, spawnInterval: 0.4, gap: [0.28, 0.5] },
   LANE_START_X: -0.7,
   LANE_END_X: 0.7,
   LEVELS: [
@@ -302,4 +307,4 @@ Trabajar fase por fase. Al terminar cada una, debe quedar algo funcionando y hac
 
 ## 16. Ideas a futuro
 
-- **Salida más caótica de los objetos:** que al principio sigan saliendo uno por uno y que, conforme avanza la partida, salgan varios a la vez. Hoy `game.js` maneja un solo objeto en el carril; habría que pasar a una lista de objetos y decidir a cuál afecta PATEAR cuando hay más de uno en la zona de tiro.
+- **Salida más caótica de los objetos:** *(hecho en parte: recta final con hasta 2 objetos, ver sección 5)*. Se podría ir más lejos con objetos que vengan de lados contrarios, decidiendo a cuál afecta PATEAR cuando hay más de uno en la zona de tiro.

@@ -20,17 +20,22 @@ const game = createGame({
     field.reset();
     ui.showGame();
   },
-  onSpawn: (type, x) => field.spawn(type, x),
-  onMove: (x) => field.moveTo(x),
-  onLeave: () => field.removeRoller(),
-  onKick(result, points) {
-    field.kick(result);
+  onSpawn: (id, type, x) => field.spawn(id, type, x),
+  onMove: (id, x) => field.moveTo(id, x),
+  onLeave: (id) => field.removeRoller(id),
+  onKick(result, points, id) {
+    field.kick(id, result);
     ui.showKick(result, points);
   },
   onLevelUp: (level) => ui.showLevelUp(level),
+  onZoneShrink(radius) {
+    field.setZoneRadius(radius);
+    ui.showZoneShrink();
+  },
+  onFinalRush: () => ui.showFinalRush(),
   onChange: (state) => ui.setHud(state),
   onEnd(reason, state, record) {
-    field.removeRoller();
+    field.removeRollers();
     ui.showEnd(reason, state, record);
   },
 });

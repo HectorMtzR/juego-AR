@@ -12,6 +12,7 @@ const els = {
   goals: document.getElementById('hud-goals'),
   lives: document.getElementById('hud-lives'),
   time: document.getElementById('hud-time'),
+  timeItem: document.getElementById('hud-time').parentElement,
   level: document.getElementById('hud-level'),
   bonus: document.getElementById('hud-bonus'),
   message: document.getElementById('message'),
@@ -116,9 +117,10 @@ export function setPaused(paused) {
   els.hud.classList.toggle('paused', paused);
 }
 
-export function setHud({ goals, lives, timeLeft, level, bonus }) {
+export function setHud({ goals, lives, timeLeft, level, bonus, finalRush }) {
   setText(els.goals, String(goals));
   setText(els.time, String(Math.ceil(timeLeft)));
+  els.timeItem.classList.toggle('hud-final', finalRush);
   setText(els.level, `Nivel ${level}`);
   els.bonus.hidden = !bonus;
   [...els.lives.children].forEach((heart, i) => heart.classList.toggle('lost', i >= lives));
@@ -131,6 +133,14 @@ export function showKick(result, points) {
 
 export function showLevelUp(level) {
   pop(els.levelUp, `¡Nivel ${level}!`);
+}
+
+export function showZoneShrink() {
+  pop(els.levelUp, '¡Zona más chica!');
+}
+
+export function showFinalRush() {
+  pop(els.levelUp, `¡ÚLTIMOS ${CONFIG.FINAL_RUSH.time}!`);
 }
 
 // ---------- Fin ----------
