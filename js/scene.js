@@ -110,6 +110,49 @@ function createBeachTexture() {
   return texture;
 }
 
+// Puntos del modelo en el plano X/Z de su grupo (el plano en el que gira al
+// rodar), para calcular qué tan alto debe ir según su giro
+function profilePoints(model) {
+  model.updateMatrixWorld(true);
+  const points = [];
+  const vertex = new THREE.Vector3();
+  model.traverse((child) => {
+    const position = child.isMesh && child.geometry.attributes.position;
+    if (!position) return;
+    for (let i = 0; i < position.count; i++) {
+      vertex.fromBufferAttribute(position, i).applyMatrix4(child.matrixWorld);
+      points.push(vertex.x, vertex.z);
+    }
+  });
+  return points;
+}
+
+// Altura del centro para que el punto más bajo, girado `angle` sobre Y, toque el piso
+function contactHeight(points, angle) {
+  const sin = Math.sin(angle);
+  const cos = Math.cos(angle);
+  let lowest = Infinity;
+  for (let i = 0; i < points.length; i += 2) {
+    lowest = Math.min(lowest, -points[i] * sin + points[i + 1] * cos);
+  }
+  return -lowest;
+}
+
+// Sombra difusa bajo los objetos: un degradado radial pintado una sola vez
+function createShadowTexture() {
+  const size = 64;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  gradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
+  gradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.6)');
+  gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, size, size);
+  return new THREE.CanvasTexture(canvas);
+}
+
 // ---------- Cancha ----------
 
 // Pasto con franjas y líneas blancas pintadas en un canvas
@@ -191,6 +234,7 @@ export function createField() {
 
   // Plantillas normalizadas por tipo; están completas cuando `ready` se resuelve
   const models = {};
+  let rockProfile = null; // la roca no es redonda: su altura depende de su giro
   const ready = Promise.all(
     Object.keys(MODEL_FILES).map(async (type) => {
       models[type] = await loadModel(type);
@@ -198,37 +242,87 @@ export function createField() {
   ).then(() => {
     models.goal.position.set(0, CONFIG.GOAL_Y, 0);
     group.add(models.goal);
+    rockProfile = profilePoints(models.rock);
   });
+
+  // Una sola geometría y un solo material para todas las sombras; cada una
+  // cambia solo de escala (crece con el objeto y se encoge al elevarse)
+  const shadowGeometry = new THREE.CircleGeometry(1, 24);
+  const shadowMaterial = new THREE.MeshBasicMaterial({
+    map: createShadowTexture(),
+    transparent: true,
+    opacity: CONFIG.SHADOW_OPACITY,
+    depthWrite: false,
+  });
+
+  function createShadow(radius) {
+    const shadow = new THREE.Mesh(shadowGeometry, shadowMaterial);
+    shadow.position.z = 0.006; // sobre la zona de tiro
+    shadow.userData.size = radius * 1.3;
+    group.add(shadow);
+    return shadow;
+  }
+
+  // La sombra sigue al objeto en el piso y se encoge cuanto más alto está
+  function placeShadow(shadow, object, radius) {
+    const lift = Math.max(0, object.position.z - radius);
+    const k = THREE.MathUtils.clamp(1 - lift * 2.5, 0.25, 1);
+    shadow.position.x = object.position.x;
+    shadow.position.y = object.position.y;
+    shadow.scale.setScalar(shadow.userData.size * k * object.scale.x);
+  }
+
+  // Altura del centro de cada objeto mientras rueda
+  function restHeight(roller) {
+    const { type, object, radius, traveled } = roller;
+    if (type === 'rock' && rockProfile) return contactHeight(rockProfile, object.rotation.y);
+    if (type === 'beach') {
+      const { height, length } = CONFIG.BEACH_BOUNCE;
+      return radius + height * Math.abs(Math.sin((traveled / length) * Math.PI));
+    }
+    return radius;
+  }
 
   // ---------- Objetos ----------
 
-  const rollers = new Map(); // objetos que cruzan el carril, por id: { object, radius }
-  const flying = [];         // objetos ya pateados, con su animación de salida
+  // Objetos que cruzan el carril, por id: { type, object, radius, shadow, traveled }
+  const rollers = new Map();
+  const flying = []; // objetos ya pateados, con su animación de salida
 
   // `lane` desplaza el objeto hacia el fondo (+1) o el frente (-1) del carril
   function spawn(id, type, x, lane) {
     const object = models[type].clone();
     const radius = object.userData.height / 2;
-    object.position.set(x, CONFIG.LANE_Y + lane * CONFIG.CROSS_LANE_OFFSET, radius);
+    // Giro inicial al azar para que no todos los objetos se vean iguales
+    object.rotation.y = Math.random() * Math.PI * 2;
+    const roller = { type, object, radius, shadow: createShadow(radius), traveled: 0 };
+    object.position.set(x, CONFIG.LANE_Y + lane * CONFIG.CROSS_LANE_OFFSET, 0);
+    object.position.z = restHeight(roller);
     group.add(object);
-    rollers.set(id, { object, radius });
+    placeShadow(roller.shadow, object, radius);
+    rollers.set(id, roller);
   }
 
   function moveTo(id, x) {
-    const { object, radius } = rollers.get(id);
-    object.rotation.y += (x - object.position.x) / radius; // rueda sin patinar
+    const roller = rollers.get(id);
+    const { object, radius } = roller;
+    const dx = x - object.position.x;
+    object.rotation.y += dx / radius; // rueda sin patinar
     object.position.x = x;
+    roller.traveled += Math.abs(dx);
+    object.position.z = restHeight(roller);
+    placeShadow(roller.shadow, object, radius);
   }
 
   function removeRoller(id) {
     const roller = rollers.get(id);
     if (!roller) return;
-    group.remove(roller.object);
+    group.remove(roller.object, roller.shadow);
     rollers.delete(id);
   }
 
   function removeRollers() {
-    for (const { object } of rollers.values()) group.remove(object);
+    for (const { object, shadow } of rollers.values()) group.remove(object, shadow);
     rollers.clear();
   }
 
@@ -252,10 +346,12 @@ export function createField() {
     }
     const roller = rollers.get(id);
     if (!roller || !KICK_ANIMATIONS[result]) return;
-    const { object } = roller;
+    const { object, radius, shadow } = roller;
     rollers.delete(id);
     flying.push({
       object,
+      radius,
+      shadow,
       from: object.position.clone(),
       time: 0,
       spinSide: Math.random() < 0.5 ? -1 : 1,
@@ -270,7 +366,7 @@ export function createField() {
 
   function reset() {
     removeRollers();
-    for (const { object } of flying) group.remove(object);
+    for (const { object, shadow } of flying) group.remove(object, shadow);
     flying.length = 0;
     for (const { ring } of puffs) group.remove(ring);
     puffs.length = 0;
@@ -304,10 +400,11 @@ export function createField() {
       const item = flying[i];
       item.time += dt;
       if (item.time >= item.duration) {
-        group.remove(item.object);
+        group.remove(item.object, item.shadow);
         flying.splice(i, 1);
       } else {
         item.step(item, dt);
+        placeShadow(item.shadow, item.object, item.radius);
       }
     }
   }

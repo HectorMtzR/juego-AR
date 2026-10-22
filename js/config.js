@@ -34,6 +34,9 @@ export const CONFIG = {
   SOUND_VOLUME: 0.8,          // volumen general, de 0 a 1
   MODEL_SIZES: { soccer: 0.08, beach: 0.11, rock: 0.09, goal: 0.45 }, // tamaño máx. en unidades del marcador (ajustable)
   MODEL_YAW: { soccer: 0, beach: 0, rock: 0, goal: 185 },             // giro en grados sobre el eje vertical del modelo (goal.glb viene de espaldas y 5° chueco)
+  SHADOW_OPACITY: 0.55,       // sombra difusa bajo los objetos
+  // La pelota de playa es ligera: da saltitos de `height` cada `length` unidades recorridas
+  BEACH_BOUNCE: { height: 0.012, length: 0.22 },
 
   // Postura del marcador. true: parado (pantalla o pared); la cancha sale del marcador
   // hacia la cámara y la portería queda de frente. false: acostado en una mesa; la
