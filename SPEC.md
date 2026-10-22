@@ -234,10 +234,10 @@ Por cada recurso se registra **nombre, autor, fuente (enlace) y licencia**. Esto
 ### Modelos (4, todos < 1 MB)
 | Archivo | Modelo | Autor | Fuente | Licencia |
 |---|---|---|---|---|
-| `soccer_ball.glb` | Simple soccer football | Smirnoff Alexander | Poly Pizza (PENDIENTE: enlace) | PENDIENTE |
-| `beach_ball.glb` | Beach ball | the_normalgamer | Poly Pizza (PENDIENTE: enlace) | PENDIENTE |
-| `rock.glb` | Boulder | Poly by Google | Poly Pizza (PENDIENTE: enlace) | PENDIENTE (probablemente CC-BY 3.0) |
-| `goal.glb` | Soccer goal | Poly by Google | Poly Pizza (PENDIENTE: enlace) | PENDIENTE (probablemente CC-BY 3.0) |
+| `soccer_ball.glb` | Simple soccer football | Smirnoff Alexander | [poly.pizza/m/57u6P7Sr7K0](https://poly.pizza/m/57u6P7Sr7K0) | CC BY 3.0 |
+| `beach_ball.glb` | beach ball | the_normalgamer | [poly.pizza/m/4IwPTeOmq6c](https://poly.pizza/m/4IwPTeOmq6c) | CC BY 3.0 |
+| `rock.glb` | Boulder | Poly by Google | [poly.pizza/m/3jql0qtape-](https://poly.pizza/m/3jql0qtape-) | CC BY 3.0 |
+| `goal.glb` | Soccer goal | Poly by Google | [poly.pizza/m/7t4hmicGHV4](https://poly.pizza/m/7t4hmicGHV4) | CC BY 3.0 |
 
 ### Sonidos (8, .mp3)
 `click`, `kick`, `goal`, `boing`, `hit`, `whoosh`, `levelup`, `gameover`: **sonidos originales creados por síntesis para este proyecto** (sin licencia de terceros).
@@ -304,7 +304,8 @@ Trabajar fase por fase. Al terminar cada una, debe quedar algo funcionando y hac
 ## 15. Tareas manuales (las hace el equipo, no Claude Code)
 
 - [x] Descargar los 4 modelos `.glb`.
-- [ ] Completar enlaces y licencias de los modelos (tabla de la sección 10).
+- [x] Completar enlaces y licencias de los modelos (tabla de la sección 10).
+- [ ] Subir `marker/marker.png` al repositorio (el README lo enlaza para imprimir).
 - [x] Conseguir los sonidos (originales, por síntesis).
 - [x] Diseñar el marcador (QR con la URL + marco de cancha) y compilarlo en el compilador de MindAR.
 - [ ] Imprimir el marcador (después de probar la Fase 1 en pantalla).

@@ -42,7 +42,8 @@ const goalsText = (goals) => `${goals} ${goals === 1 ? 'gol' : 'goles'}`;
 
 els.startInfo.textContent =
   `Tienes ${CONFIG.GAME_DURATION} segundos y ${CONFIG.START_LIVES} vidas. ` +
-  `Con ${CONFIG.STREAK_FOR_BONUS} goles seguidos, cada gol vale x${CONFIG.BONUS_MULTIPLIER}.`;
+  `Con ${CONFIG.STREAK_FOR_BONUS} goles seguidos, cada gol vale x${CONFIG.BONUS_MULTIPLIER}. ` +
+  'Cada 20 segundos se pone más difícil.';
 els.bonus.textContent = `🔥 x${CONFIG.BONUS_MULTIPLIER}`;
 
 els.lives.replaceChildren(

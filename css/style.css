@@ -128,6 +128,12 @@ body {
   font-size: 1.6rem;
 }
 
+.screen .credits {
+  max-width: 34ch;
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
 .screen-overlay {
   background: rgba(6, 30, 15, 0.82);
 }
