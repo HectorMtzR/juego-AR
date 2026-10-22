@@ -20,7 +20,7 @@ const game = createGame({
     field.reset();
     ui.showGame();
   },
-  onSpawn: (id, type, x) => field.spawn(id, type, x),
+  onSpawn: (id, type, x, lane) => field.spawn(id, type, x, lane),
   onMove: (id, x) => field.moveTo(id, x),
   onLeave: (id) => field.removeRoller(id),
   onKick(result, points, id) {
@@ -28,11 +28,10 @@ const game = createGame({
     ui.showKick(result, points);
   },
   onLevelUp: (level) => ui.showLevelUp(level),
-  onZoneShrink(radius) {
-    field.setZoneRadius(radius);
-    ui.showZoneShrink();
+  onStage(stage) {
+    field.setZoneRadius(stage.zoneRadius);
+    ui.showStage(stage);
   },
-  onFinalRush: () => ui.showFinalRush(),
   onChange: (state) => ui.setHud(state),
   onEnd(reason, state, record) {
     field.removeRollers();

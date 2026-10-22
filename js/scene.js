@@ -180,7 +180,7 @@ export function createField() {
   group.add(lane);
 
   // Zona de tiro. Se dibuja con el radio inicial y se escala al achicarse.
-  const radius = CONFIG.KICK_ZONE_RADII[0];
+  const radius = CONFIG.STAGES[0].zoneRadius;
   let zoneScale = 1; // escala a la que tiende la zona (radio actual / inicial)
   const zone = new THREE.Group();
   zone.position.set(0, CONFIG.LANE_Y, 0);
@@ -205,10 +205,11 @@ export function createField() {
   const rollers = new Map(); // objetos que cruzan el carril, por id: { object, radius }
   const flying = [];         // objetos ya pateados, con su animación de salida
 
-  function spawn(id, type, x) {
+  // `lane` desplaza el objeto hacia el fondo (+1) o el frente (-1) del carril
+  function spawn(id, type, x, lane) {
     const object = models[type].clone();
     const radius = object.userData.height / 2;
-    object.position.set(x, CONFIG.LANE_Y, radius);
+    object.position.set(x, CONFIG.LANE_Y + lane * CONFIG.CROSS_LANE_OFFSET, radius);
     group.add(object);
     rollers.set(id, { object, radius });
   }

@@ -42,25 +42,27 @@ function levelFor(goals) {
   return level;
 }
 
-// Radio de la zona de tiro según los segundos que quedan
-function zoneRadiusFor(timeLeft) {
-  const radii = CONFIG.KICK_ZONE_RADII;
-  const elapsed = CONFIG.GAME_DURATION - timeLeft;
-  return radii[Math.min(Math.floor(elapsed / CONFIG.ZONE_SHRINK_EVERY), radii.length - 1)];
+// Índice de la etapa que corresponde a los segundos que quedan
+function stageFor(timeLeft) {
+  let stage = 0;
+  CONFIG.STAGES.forEach(({ from }, i) => {
+    if (timeLeft <= from) stage = i;
+  });
+  return stage;
 }
 
 const randomBetween = ([min, max]) => min + Math.random() * (max - min);
 
 // handlers:
 //   onStart()                     empieza una partida
-//   onSpawn(id, type, x)          entra un objeto al carril
+//   onSpawn(id, type, x, lane)    entra un objeto al carril; `lane` es 0, o ±1 si
+//                                 en la etapa vienen objetos de los dos lados
 //   onMove(id, x)                 el objeto avanzó
 //   onLeave(id)                   el objeto salió del carril sin ser pateado
 //   onKick(result, points, id)    'goal' | 'beach' | 'rock' | 'air', los goles que sumó
 //                                 y el objeto pateado (null si fue al aire)
 //   onLevelUp(level)              se alcanzó un nivel nuevo
-//   onZoneShrink(radius)          la zona de tiro se hizo más chica
-//   onFinalRush()                 empezó la recta final
+//   onStage(stage)                empezó una etapa nueva (un elemento de CONFIG.STAGES)
 //   onChange(state)               cambió algo del HUD (también el tiempo)
 //   onEnd(reason, state, record)  'time' | 'lives'; `record` si hay nueva mejor marca
 export function createGame(handlers) {
@@ -72,21 +74,19 @@ export function createGame(handlers) {
     level: 1,
     streak: 0,     // goles seguidos
     bonus: false,  // racha activa: el siguiente gol vale BONUS_MULTIPLIER
-    zoneRadius: 0,
-    finalRush: false,
+    stage: 0,      // índice en CONFIG.STAGES
     best: loadBest(),
   };
-  // Objetos que cruzan el carril: { id, type, x, dir }, del más antiguo al más nuevo.
-  // Si hay varios van en la misma dirección, así que nunca se cruzan.
+  // Objetos que cruzan el carril: { id, type, x, dir }, del más antiguo al más nuevo
   let objects = [];
   let nextId = 1;
   let spawnTimer = 0;
-  let nextGap = 0; // separación que debe llevar el último objeto antes de que salga otro detrás
+  let nextGap = 0; // lo que debe avanzar el último objeto antes de que salga otro
 
   const level = () => CONFIG.LEVELS[state.level - 1];
-  const rush = CONFIG.FINAL_RUSH;
-  const speed = () => level().speed * (state.finalRush ? rush.speedBoost : 1);
-  const spawnInterval = () => (state.finalRush ? rush.spawnInterval : level().spawnInterval);
+  const stage = () => CONFIG.STAGES[state.stage];
+  const speed = () => level().speed * stage().speedBoost;
+  const spawnInterval = () => stage().spawnInterval ?? level().spawnInterval;
 
   function start() {
     state.playing = true;
@@ -96,8 +96,7 @@ export function createGame(handlers) {
     state.level = 1;
     state.streak = 0;
     state.bonus = false;
-    state.zoneRadius = zoneRadiusFor(state.timeLeft);
-    state.finalRush = false;
+    state.stage = stageFor(state.timeLeft);
     objects = [];
     spawnTimer = spawnInterval();
     handlers.onStart();
@@ -115,12 +114,14 @@ export function createGame(handlers) {
     handlers.onEnd(reason, state, record);
   }
 
-  // Fuera de la recta final sale un objeto a la vez, con el carril vacío.
-  // En la recta final puede salir otro detrás del último cuando este ya avanzó `nextGap`.
+  // Sale otro objeto cuando el último ya avanzó `nextGap` desde su orilla, venga
+  // del lado que venga. Como todos ruedan a la misma velocidad, lo que le falta a
+  // cada uno para llegar al centro difiere al menos `nextGap` del de los demás, y
+  // con eso nunca hay dos dentro de la zona a la vez (ni se cruzan dentro de ella).
   function canSpawn() {
     if (spawnTimer > 0) return false;
     if (objects.length === 0) return true;
-    if (!state.finalRush || objects.length >= rush.maxObjects) return false;
+    if (objects.length >= stage().maxObjects) return false;
     const last = objects[objects.length - 1];
     const startX = last.dir > 0 ? CONFIG.LANE_START_X : CONFIG.LANE_END_X;
     return Math.abs(last.x - startX) >= nextGap;
@@ -128,7 +129,9 @@ export function createGame(handlers) {
 
   function spawn() {
     const last = objects[objects.length - 1];
-    const dir = last ? last.dir : Math.random() < 0.5 ? 1 : -1;
+    const randomDir = Math.random() < 0.5 ? 1 : -1;
+    // Sin `bothSides` los objetos siguen al último, en la misma dirección
+    const dir = last && !stage().bothSides ? last.dir : randomDir;
     const object = {
       id: nextId++,
       type: pickType(level().weights),
@@ -137,8 +140,8 @@ export function createGame(handlers) {
     };
     objects.push(object);
     spawnTimer = spawnInterval();
-    nextGap = randomBetween(rush.gap);
-    handlers.onSpawn(object.id, object.type, object.x);
+    nextGap = randomBetween(stage().gap);
+    handlers.onSpawn(object.id, object.type, object.x, stage().bothSides ? dir : 0);
   }
 
   // dt en segundos. Si no se llama (marcador perdido), el juego queda en pausa.
@@ -162,14 +165,10 @@ export function createGame(handlers) {
 
     state.timeLeft = Math.max(0, state.timeLeft - dt);
 
-    const radius = zoneRadiusFor(state.timeLeft);
-    if (radius !== state.zoneRadius) {
-      state.zoneRadius = radius;
-      handlers.onZoneShrink(radius);
-    }
-    if (!state.finalRush && state.timeLeft <= rush.time && state.timeLeft > 0) {
-      state.finalRush = true;
-      handlers.onFinalRush();
+    const reachedStage = stageFor(state.timeLeft);
+    if (reachedStage !== state.stage && state.timeLeft > 0) {
+      state.stage = reachedStage;
+      handlers.onStage(stage());
     }
 
     handlers.onChange(state);
@@ -182,7 +181,7 @@ export function createGame(handlers) {
     let result = 'air';
     // La zona de tiro está centrada en X = 0. La separación entre objetos
     // impide que haya más de uno dentro a la vez.
-    const object = objects.find(({ x }) => Math.abs(x) <= state.zoneRadius);
+    const object = objects.find(({ x }) => Math.abs(x) <= stage().zoneRadius);
     if (object) {
       result = object.type === 'soccer' ? 'goal' : object.type;
       // Un objeto solo se patea una vez: sale del carril

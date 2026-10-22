@@ -4,15 +4,25 @@ export const CONFIG = {
   START_LIVES: 3,
   STREAK_FOR_BONUS: 3,
   BONUS_MULTIPLIER: 2,
-  // Radio de la zona de tiro (unidades del marcador). Empieza con el primero y
-  // pasa al siguiente cada ZONE_SHRINK_EVERY segundos de partida.
-  KICK_ZONE_RADII: [0.12, 0.1, 0.085],
-  ZONE_SHRINK_EVERY: 20,      // segundos
-  // Recta final: en los últimos `time` segundos los objetos van más rápido y
-  // pueden ir hasta `maxObjects` en el carril, uno detrás de otro y separados
-  // entre `gap[0]` y `gap[1]` unidades (más que el diámetro de la zona, para
-  // que nunca haya dos dentro a la vez). `spawnInterval` aplica con el carril vacío.
-  FINAL_RUSH: { time: 15, maxObjects: 2, speedBoost: 1.2, spawnInterval: 0.4, gap: [0.28, 0.5] },
+  // Etapas de la partida. Cada una aplica desde que quedan `from` segundos hasta la siguiente.
+  //   zoneRadius     radio de la zona de tiro (unidades del marcador)
+  //   maxObjects     objetos a la vez en el carril
+  //   bothSides      si pueden venir de lados contrarios al mismo tiempo
+  //   speedBoost     multiplica la velocidad del nivel
+  //   spawnInterval  espera con el carril vacío (null: la del nivel)
+  //   gap            [mín, máx] de lo que avanza un objeto antes de que salga otro. El mínimo
+  //                  debe ser mayor que el diámetro de la zona: así nunca hay dos dentro a la vez
+  //   alert          reloj del HUD en rojo
+  //   message        aviso al empezar la etapa (\n separa renglones)
+  STAGES: [
+    { from: 60, zoneRadius: 0.12, maxObjects: 1, bothSides: false, speedBoost: 1, spawnInterval: null, gap: [0.35, 0.6], alert: false, message: null },
+    { from: 40, zoneRadius: 0.1, maxObjects: 2, bothSides: false, speedBoost: 1.1, spawnInterval: null, gap: [0.35, 0.6], alert: false, message: '¡Zona más chica!\n¡Vienen de 2 en 2!' },
+    { from: 20, zoneRadius: 0.085, maxObjects: 2, bothSides: false, speedBoost: 1.2, spawnInterval: 0.4, gap: [0.28, 0.5], alert: true, message: '¡ÚLTIMOS 20!\n¡Zona más chica!' },
+    { from: 10, zoneRadius: 0.085, maxObjects: 3, bothSides: true, speedBoost: 1.2, spawnInterval: 0.4, gap: [0.28, 0.5], alert: true, message: '¡ÚLTIMOS 10!\n¡De los 2 lados!' },
+  ],
+  // Con objetos en ambos sentidos, cada sentido rueda un poco hacia el frente o
+  // hacia el fondo del carril para que al cruzarse no se atraviesen
+  CROSS_LANE_OFFSET: 0.05,
   LANE_START_X: -0.7,
   LANE_END_X: 0.7,
   LEVELS: [

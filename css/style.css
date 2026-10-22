@@ -179,7 +179,7 @@ body {
   font-weight: 800;
 }
 
-/* Recta final: el reloj se pone rojo y late */
+/* Etapas finales: el reloj se pone rojo y late */
 .hud-final {
   background: #e63946;
   animation: hud-final-pulse 1s ease-in-out infinite;
@@ -215,6 +215,7 @@ body {
 .level-up {
   top: 33%;
   font-size: 2rem;
+  white-space: pre-line; /* los avisos de etapa usan dos renglones */
   color: #7df0ff;
   animation-duration: 1.4s;
 }

@@ -101,11 +101,20 @@ Iluminación simple: una luz ambiental + una direccional.
 - Entre un objeto y otro hay un intervalo de espera (`SPAWN_INTERVAL`, depende del nivel).
 - El tipo de objeto se elige al azar según las probabilidades del nivel.
 
-> **Cambio (ajuste de dificultad):** en la **recta final** (últimos 15 s) los objetos van 1.2× más rápido, el carril vacío se rellena en 0.4 s y puede haber **hasta 2 objetos** a la vez: el segundo entra detrás del primero, en la misma dirección, separado entre 0.28 y 0.5 unidades. Esa separación es mayor que el diámetro de la zona de tiro, así que nunca hay dos objetos dentro de la zona a la vez y PATEAR siempre afecta a uno solo. Al empezar la recta final aparece "¡ÚLTIMOS 15!" y el reloj del HUD se pone rojo. Valores en `FINAL_RUSH`.
+> **Cambio (ajuste de dificultad):** la partida se divide en **etapas** por tiempo restante (`STAGES` en `config.js`). Cada una fija el radio de la zona de tiro, cuántos objetos puede haber a la vez, si vienen de los dos lados, un multiplicador de velocidad y la separación entre objetos:
+>
+> | Quedan | Zona (radio) | Objetos a la vez | Lados | Velocidad | Aviso |
+> |---|---|---|---|---|---|
+> | 60–40 s | 0.12 | 1 | uno | ×1 | — |
+> | 40–20 s | 0.10 | 2, uno detrás de otro | uno | ×1.1 | "¡Zona más chica! ¡Vienen de 2 en 2!" |
+> | 20–10 s | 0.085 | 2, uno detrás de otro | uno | ×1.2, carril vacío se rellena en 0.4 s | "¡ÚLTIMOS 20! ¡Zona más chica!" + reloj rojo |
+> | 10–0 s | 0.085 | 3 | **los dos** | ×1.2, rellena en 0.4 s | "¡ÚLTIMOS 10! ¡De los 2 lados!" + reloj rojo |
+>
+> Un objeto nuevo solo sale cuando el anterior ya avanzó cierta distancia (`gap`), venga del lado que venga. Como todos ruedan a la misma velocidad, eso garantiza que **nunca hay dos objetos dentro de la zona a la vez** y que los que vienen de lados contrarios se cruzan fuera de ella, así que PATEAR siempre afecta a uno solo. Al cruzarse, cada sentido rueda un poco hacia el frente o el fondo del carril (`CROSS_LANE_OFFSET`) para que no se atraviesen.
 
 ### El botón PATEAR
 - Al tocarlo, se revisa si hay un objeto **dentro de la zona de tiro** (distancia en X al centro ≤ radio actual de la zona).
-- **La zona se achica cada 20 s:** radio 0.12 → 0.10 → 0.085 (`KICK_ZONE_RADII`, `ZONE_SHRINK_EVERY`), con una animación corta y el aviso "¡Zona más chica!".
+- **La zona se achica por etapas:** radio 0.12 → 0.10 (a los 40 s) → 0.085 (a los 20 s), con una animación corta y aviso.
 - Si hay objeto en la zona, se resuelve según la tabla de reglas.
 - Si no hay nada en la zona, es una **patada al aire**.
 - Un objeto solo puede ser pateado una vez. Después de patearlo, sale de juego con su animación.
@@ -153,9 +162,8 @@ export const CONFIG = {
   START_LIVES: 3,
   STREAK_FOR_BONUS: 3,
   BONUS_MULTIPLIER: 2,
-  KICK_ZONE_RADII: [0.12, 0.1, 0.085], // unidades del marcador; uno por etapa
-  ZONE_SHRINK_EVERY: 20,      // segundos
-  FINAL_RUSH: { time: 15, maxObjects: 2, speedBoost: 1.2, spawnInterval: 0.4, gap: [0.28, 0.5] },
+  STAGES: [ /* etapas por tiempo restante: zona, objetos a la vez, lados, velocidad (ver sección 5) */ ],
+  CROSS_LANE_OFFSET: 0.05,
   LANE_START_X: -0.7,
   LANE_END_X: 0.7,
   LEVELS: [
@@ -307,4 +315,4 @@ Trabajar fase por fase. Al terminar cada una, debe quedar algo funcionando y hac
 
 ## 16. Ideas a futuro
 
-- **Salida más caótica de los objetos:** *(hecho en parte: recta final con hasta 2 objetos, ver sección 5)*. Se podría ir más lejos con objetos que vengan de lados contrarios, decidiendo a cuál afecta PATEAR cuando hay más de uno en la zona de tiro.
+- **Salida más caótica de los objetos:** *(hecho: etapas con hasta 3 objetos y de los dos lados, ver sección 5)*.
